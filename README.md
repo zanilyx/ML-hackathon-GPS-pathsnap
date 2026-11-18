@@ -1,5 +1,5 @@
 PathSnap: GPS map-matching and route reconstruction
-Team: Members: <name 1>, <name 2>, <name 3>, <name 4> Course: UE24CS352A Machine Learning, PES University (PathSnap Hackathon, 18-11-2026)
+Team: Members: Ritesh Paruchuri, Abhay Babji P, P Sai dheeraj Course: UE24CS352A Machine Learning, PES University (PathSnap Hackathon, 18-11-2026)
 
 PathSnap takes noisy GPS points from a vehicle and works out which roads it actually drove on. A classifier scores candidate road segments for every GPS point, and an HMM with Viterbi decoding then joins those picks into a connected route. The result is served through a FastAPI backend and shown in a separate UI.
 
