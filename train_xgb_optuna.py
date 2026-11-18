@@ -55,14 +55,16 @@ def cv_eval(params):
 
 
 def cv_top1(params):
-    values = []
+    frames, predictions = [], []
     for a, b in SPLITS:
         model = xgb.XGBClassifier(**params)
         model.fit(X[a], y[a])
-        p = model.predict_proba(X[b])[:, 1]
-        top1, _ = top1_and_miss(train.iloc[b], p)
-        values.append(top1)
-    return float(np.mean(values))
+        frames.append(train.iloc[b][["trip", "obs", "label"]].copy())
+        predictions.append(model.predict_proba(X[b])[:, 1])
+    # Pool all out-of-fold predictions so each observation has equal weight,
+    # matching top1_and_miss's student-test metric instead of averaging folds.
+    oof = pd.concat(frames, ignore_index=True)
+    return top1_and_miss(oof, np.concatenate(predictions))[0]
 
 
 def cv_metrics(params):

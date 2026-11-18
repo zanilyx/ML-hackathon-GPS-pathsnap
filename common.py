@@ -4,7 +4,7 @@ import numpy as np, pandas as pd
 
 EARTH_R = 6371000.0
 SEED = 42
-DEFAULT_GAP_THRESHOLD_S = 60.0
+DEFAULT_GAP_THRESHOLD_S = 120.0
 
 
 def list_trips(split_dir):

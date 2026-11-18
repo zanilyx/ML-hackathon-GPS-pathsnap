@@ -25,5 +25,5 @@ for _, r in R.head(6).iterrows():
     dmin = D.min(1); t = trip["track"][:, 2]; dt = np.r_[0, np.diff(t)]
     far = dmin > 150
     print(f"  trip {r.trip}: miss={r.miss_rate:.1%} | dist to route: median {np.median(dmin):.0f} m, p90 {np.percentile(dmin,90):.0f} m, "
-          f"max {dmin.max():.0f} m | {far.mean():.1%} of points >150 m from route | big time gaps (>60 s): {(dt>60).sum()}"
-          f" | far points right after a gap: {(far & (dt>60)).sum()}")
+          f"max {dmin.max():.0f} m | {far.mean():.1%} of points >150 m from route | big time gaps (>{DEFAULT_GAP_THRESHOLD_S:g} s): {(dt>DEFAULT_GAP_THRESHOLD_S).sum()}"
+          f" | far points right after a gap: {(far & (dt>DEFAULT_GAP_THRESHOLD_S)).sum()}")
