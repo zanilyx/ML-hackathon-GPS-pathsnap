@@ -28,22 +28,14 @@ GROUPS = TRAIN.trip.values
 SPLITS = list(GroupKFold(5).split(X, Y, GROUPS))
 
 
-def select_device():
-    try:
-        probe_x = np.random.default_rng(SEED).normal(size=(32, len(FEATURES))).astype(np.float32)
-        probe_y = np.tile(np.array([0, 1], dtype=np.int32), 16)
-        xgb.XGBClassifier(n_estimators=2, tree_method="hist", device="cuda",
-                          eval_metric="logloss").fit(probe_x, probe_y)
-        return "cuda"
-    except Exception as exc:
-        print(f"CUDA probe failed; using CPU: {exc}", flush=True)
-        return "cpu"
-
-
-DEVICE = select_device()
+# Enforce CUDA to prevent silent CPU fallbacks
+DEVICE = "cuda"
 print(f"XGBoost device: {DEVICE}", flush=True)
+
+# Added n_jobs=2 to prevent CPU thread-fighting while Optuna runs concurrently
 BASELINE = dict(n_estimators=300, max_depth=6, learning_rate=0.1,
-                tree_method="hist", device=DEVICE, eval_metric="logloss", random_state=SEED)
+                tree_method="hist", device=DEVICE, eval_metric="logloss", 
+                random_state=SEED, n_jobs=2)
 
 
 def rank_arrays(frame):
@@ -54,8 +46,10 @@ def rank_arrays(frame):
 
 
 def make_ranker(params):
+    # Added n_jobs=2 to manage data-prep threading per parallel trial
     return xgb.XGBRanker(objective="rank:pairwise", eval_metric="ndcg",
-                         tree_method="hist", device=DEVICE, random_state=SEED, **params)
+                         tree_method="hist", device=DEVICE, random_state=SEED, 
+                         n_jobs=2, **params)
 
 
 def fit_predict_ranker(train_frame, valid_frame, params):
@@ -153,7 +147,10 @@ if __name__ == "__main__":
           f"{classifier_cv_top1(BASELINE):.6f}", flush=True)
     study = optuna.create_study(direction="maximize",
                                 sampler=optuna.samplers.TPESampler(seed=SEED))
-    study.optimize(objective, n_trials=trials)
+    
+    # Saturated concurrency: runs 4 parallel GPU trials simultaneously
+    study.optimize(objective, n_trials=trials, n_jobs=2)
+    
     ranker_params = dict(study.best_params)
     optimized_cv_top1 = ranker_cv_top1(ranker_params)
     classifier_cv1 = classifier_cv_top1(BASELINE)
